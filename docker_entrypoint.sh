@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 
+# Secrets location...
 CONFIG_FILE=/s3-config.yml
 SECRETS_ROOT=/etc/secrets
 ACCESSKEY_FILE=${SECRETS_ROOT}/s3-accesskey
 SECRETKEY_FILE=${SECRETS_ROOT}/s3-secretkey
 REGION_FILE=${SECRETS_ROOT}/s3-region
 BUCKET_FILE=${SECRETS_ROOT}/s3-bucket
+DOCKER_USER_FILE=${SECRETS_ROOT}/docker-user
+DOCKER_PASS_FILE=${SECRETS_ROOT}/docker-pass
+REGISTRY_HTTP_TLS_CERTIFICATE=${SECRETS_ROOT}/crt
+REGISTRY_HTTP_TLS_KEY=${SECRETS_ROOT}/key
+export REGISTRY_AUTH_HTPASSWD_PATH=/etc/htpasswd
+export REGISTRY_AUTH_HTPASSWD_REALM="Registry Realm"
+export REGISTRY_AUTH=htpasswd
 
-FILES="ACCESSKEY_FILE SECRETKEY_FILE REGION_FILE BUCKET_FILE"
+FILES="ACCESSKEY_FILE SECRETKEY_FILE REGION_FILE BUCKET_FILE REGISTRY_HTTP_TLS_CERTIFICATE REGISTRY_HTTP_TLS_KEY DOCKER_USER DOCKER_PASS"
 ALL_OK=true
 for file_env in $FILES; do
     file_name=$(eval echo \$$file_env)
@@ -41,11 +49,20 @@ storage:
         rootdirectory: /registry_data
 http:
     addr: :5000
+    tls:
+        certificate: ${REGISTRY_HTTP_TLS_CERTIFICATE}
+        key: ${REGISTRY_HTTP_TLS_KEY}
 health:
   storagedriver:
     enabled: true
     interval: 10s
     threshold: 3
+htpasswd:
+    realm: ${REGISTRY_AUTH_HTPASSWD_REALM}
+    path: ${REGISTRY_AUTH_HTPASSWD_PATH}
 EOCONF
 
-registry ${CONFIG_FILE}
+# Create the password file...
+htpasswd -Bbn $(cat ${DOCKER_USER_FILE}) $(cat ${DOCKER_PASS_FILE}) > ${REGISTRY_AUTH_HTPASSWD_PATH}
+
+exec registry ${CONFIG_FILE}
