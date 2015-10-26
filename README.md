@@ -1,5 +1,7 @@
 # Docker Trusted Private Registry Container
 
+[![Build Status](https://travis-ci.org/UKHomeOffice/docker-s3registry.svg?branch=master)](https://travis-ci.org/UKHomeOffice/docker-s3registry)
+
 Docker Trusted Private Registry Container. Requires fully trusted certs 
 
 ## Getting Started
